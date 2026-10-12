@@ -1,0 +1,667 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>销售复盘助手原型</title>
+<meta name="description" content="AI 销售复盘助手（乐途内部版）可点击原型：拜访后复盘、拜访前提醒卡、主管周报。数据均为模拟。">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Noto+Sans+SC:wght@400;500;700&family=Noto+Serif+SC:wght@500&display=swap" rel="stylesheet">
+<style>
+:root {
+  --paper: #F3F5F2;
+  --surface: #FFFFFF;
+  --ink: #1E2B2A;
+  --muted: #5F6E6B;
+  --line: #D9E0DC;
+  --teal: #1F6F66;
+  --teal-soft: #E3EFEC;
+  --mark: #FBE38E;
+  --plum: #8A3B5C;
+  --plum-soft: #F4E7EC;
+  --phone-bg: #EEF1EF;
+  --sans: "Noto Sans SC", "Noto Sans CJK SC", "PingFang SC", "Microsoft YaHei", system-ui, sans-serif;
+  --serif: "Noto Serif SC", "Noto Serif CJK SC", "Songti SC", "SimSun", serif;
+}
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) {
+    --paper: #16201F; --surface: #1F2A29; --ink: #E6ECEA; --muted: #9DABA8;
+    --line: #33413F; --teal: #5DB3A7; --teal-soft: #213834; --mark: #6B5A1E;
+    --plum: #D88AAA; --plum-soft: #3A2530; --phone-bg: #121A19;
+  }
+}
+:root[data-theme="dark"] {
+  --paper: #16201F; --surface: #1F2A29; --ink: #E6ECEA; --muted: #9DABA8;
+  --line: #33413F; --teal: #5DB3A7; --teal-soft: #213834; --mark: #6B5A1E;
+  --plum: #D88AAA; --plum-soft: #3A2530; --phone-bg: #121A19;
+}
+* { box-sizing: border-box; }
+body {
+  margin: 0; background: var(--paper); color: var(--ink);
+  font: 15px/1.6 var(--sans);
+  -webkit-font-smoothing: antialiased;
+}
+button { font: inherit; color: inherit; cursor: pointer; }
+:focus-visible { outline: 2px solid var(--teal); outline-offset: 2px; }
+
+/* ---------- page layout ---------- */
+.page {
+  max-width: 1040px; margin: 0 auto; padding: 40px 16px 64px;
+  display: grid; grid-template-columns: minmax(0, 1fr) 390px; column-gap: 48px; align-items: start;
+  grid-template-areas: "head phone" "notes phone";
+  grid-template-rows: auto 1fr;
+}
+.intro { grid-area: head; }
+.phone-col { grid-area: phone; }
+.aside { grid-area: notes; }
+.intro h1 { font-size: 26px; line-height: 1.3; margin: 0 0 8px; font-weight: 700; }
+.intro .lede { color: var(--muted); margin: 0 0 20px; max-width: 34em; }
+.sim-note {
+  display: inline-block; font-size: 13px; color: var(--muted);
+  border: 1px solid var(--line); border-radius: 4px; padding: 2px 8px; margin-bottom: 28px;
+}
+.switcher { display: flex; flex-direction: column; gap: 6px; margin-bottom: 28px; }
+.switcher button {
+  text-align: left; background: none; border: 1px solid transparent; border-radius: 6px;
+  padding: 10px 12px; display: grid; grid-template-columns: 28px 1fr; gap: 4px 8px;
+}
+.switcher button .n { font-weight: 700; color: var(--muted); }
+.switcher button .t { font-weight: 500; }
+.switcher button .d { grid-column: 2; font-size: 13px; color: var(--muted); }
+.switcher button[aria-pressed="true"] { background: var(--surface); border-color: var(--line); }
+.switcher button[aria-pressed="true"] .n { color: var(--teal); }
+.notes h2 { font-size: 15px; margin: 0 0 8px; }
+.notes ul { margin: 0; padding-left: 1.2em; color: var(--muted); font-size: 14px; max-width: 36em; }
+.notes li { margin-bottom: 6px; }
+.notes li b { color: var(--ink); font-weight: 500; }
+.links { margin-top: 28px; font-size: 14px; }
+.links a { color: var(--teal); }
+
+/* ---------- phone ---------- */
+.phone {
+  width: 390px; height: 800px; background: var(--phone-bg); border: 1px solid var(--line);
+  border-radius: 28px; overflow: hidden; display: flex; flex-direction: column;
+  position: sticky; top: 24px;
+}
+.bar {
+  height: 48px; flex: none; display: flex; align-items: center; gap: 8px; padding: 0 12px;
+  background: var(--surface); border-bottom: 1px solid var(--line); font-weight: 500;
+}
+.bar .back { background: none; border: 0; width: 28px; height: 28px; border-radius: 6px; font-size: 18px; line-height: 1; }
+.bar .back[hidden] { display: block; visibility: hidden; }
+.bar .title { flex: 1; text-align: center; margin-right: 36px; }
+.screen { flex: 1; overflow-y: auto; padding: 14px 14px 24px; }
+.screen > * + * { margin-top: 12px; }
+
+.card { background: var(--surface); border-radius: 10px; padding: 14px; border: 1px solid var(--line); }
+.card h3 { font-size: 15px; margin: 0 0 8px; }
+.meta { font-size: 13px; color: var(--muted); }
+.row { display: flex; align-items: center; justify-content: space-between; gap: 8px; }
+
+.btn {
+  display: block; width: 100%; border: 0; border-radius: 8px; padding: 12px;
+  background: var(--teal); color: #fff; font-weight: 500;
+}
+:root[data-theme="dark"] .btn { color: #0E1716; }
+@media (prefers-color-scheme: dark) { :root:not([data-theme="light"]) .btn { color: #0E1716; } }
+.btn.ghost { background: none; color: var(--teal); border: 1px solid var(--teal); }
+.btn:disabled { opacity: .4; cursor: not-allowed; }
+.small-btn {
+  border: 1px solid var(--line); background: var(--surface); border-radius: 6px;
+  padding: 4px 10px; font-size: 13px;
+}
+.small-btn.on { background: var(--teal-soft); border-color: var(--teal); color: var(--teal); }
+
+.choices { display: grid; gap: 8px; }
+.choice {
+  text-align: left; background: var(--surface); border: 1px solid var(--line); border-radius: 8px;
+  padding: 10px 12px;
+}
+.choice[aria-pressed="true"] { border-color: var(--teal); background: var(--teal-soft); }
+.choice .t { font-weight: 500; display: block; }
+.choice .d { font-size: 13px; color: var(--muted); }
+.seg { display: flex; gap: 6px; flex-wrap: wrap; }
+
+/* ---------- the quote treatment (the product's core rule) ---------- */
+.quote {
+  font-family: var(--serif); font-size: 14.5px; line-height: 1.75; margin: 6px 0 0;
+}
+.quote .ts { font-family: var(--sans); font-size: 12px; color: var(--muted); margin-right: 6px; }
+.quote .who { font-family: var(--sans); font-size: 12px; color: var(--muted); margin-right: 4px; }
+.quote mark {
+  background: linear-gradient(transparent 38%, var(--mark) 38%, var(--mark) 92%, transparent 92%);
+  color: inherit; padding: 0 1px;
+}
+
+/* ---------- review ---------- */
+.verdict { font-size: 17px; font-weight: 500; line-height: 1.5; margin: 4px 0 10px; }
+.total { display: flex; align-items: baseline; gap: 4px; }
+.total b { font-size: 32px; line-height: 1; }
+.dim { border-top: 1px solid var(--line); }
+.dim:first-of-type { border-top: 0; }
+.dim > button {
+  width: 100%; background: none; border: 0; padding: 10px 0; display: grid;
+  grid-template-columns: 1fr auto 16px; gap: 10px; align-items: center; text-align: left;
+}
+.pips { display: flex; gap: 3px; }
+.pips i { width: 14px; height: 6px; border-radius: 2px; background: var(--line); }
+.pips i.f { background: var(--teal); }
+.dim .chev { color: var(--muted); transition: transform .15s; }
+.dim[data-open="true"] .chev { transform: rotate(90deg); }
+.dim .body { padding: 0 0 12px; }
+.dim[data-open="false"] .body { display: none; }
+.na { font-size: 13px; color: var(--muted); }
+.good { border-left: 3px solid var(--teal); }
+.fix { border-left: 3px solid var(--plum); }
+.fix .rewrite { background: var(--plum-soft); border-radius: 6px; padding: 8px 10px; margin-top: 8px; font-size: 14px; }
+.label { font-size: 13px; color: var(--muted); font-weight: 500; }
+
+.progress { list-style: none; margin: 0; padding: 0; }
+.progress li { display: flex; gap: 10px; align-items: center; padding: 8px 0; color: var(--muted); }
+.progress li .dot { width: 10px; height: 10px; border-radius: 50%; border: 2px solid var(--line); flex: none; }
+.progress li.doing { color: var(--ink); }
+.progress li.doing .dot { border-color: var(--teal); }
+.progress li.done { color: var(--ink); }
+.progress li.done .dot { background: var(--teal); border-color: var(--teal); }
+
+.field { padding: 10px 0; border-top: 1px solid var(--line); }
+.field:first-child { border-top: 0; padding-top: 0; }
+.field .k { font-size: 13px; color: var(--muted); }
+.field .v { font-weight: 500; }
+.field .acts { display: flex; gap: 6px; flex: none; }
+.field input { width: 100%; font: inherit; padding: 6px 8px; border: 1px solid var(--teal); border-radius: 6px; background: var(--surface); color: var(--ink); }
+.state { font-size: 12px; padding: 1px 6px; border-radius: 4px; border: 1px solid var(--line); color: var(--muted); white-space: nowrap; }
+.state.ok { border-color: var(--teal); color: var(--teal); }
+
+.todo { display: grid; grid-template-columns: 22px 1fr; gap: 8px; padding: 8px 0; border-top: 1px solid var(--line); }
+.todo:first-child { border-top: 0; }
+.todo input { width: 18px; height: 18px; accent-color: var(--teal); margin-top: 3px; }
+
+.done-mark { font-size: 40px; color: var(--teal); text-align: center; margin: 24px 0 4px; }
+
+/* ---------- reminder card ---------- */
+.block-n { font-weight: 700; color: var(--teal); margin-right: 6px; }
+.must { margin: 0; padding-left: 1.3em; }
+.must li { margin-bottom: 4px; }
+.stats { display: grid; grid-template-columns: repeat(3, 1fr); gap: 8px; text-align: center; }
+.stats b { display: block; font-size: 20px; }
+.stats span { font-size: 12px; color: var(--muted); }
+
+/* ---------- weekly ---------- */
+table { width: 100%; border-collapse: collapse; font-size: 14px; }
+th, td { text-align: left; padding: 6px 4px; border-top: 1px solid var(--line); }
+th { font-weight: 500; color: var(--muted); font-size: 13px; border-top: 0; }
+td.num, th.num { text-align: right; font-variant-numeric: tabular-nums; }
+.bars .b { display: grid; grid-template-columns: 92px 1fr 64px; gap: 8px; align-items: center; font-size: 14px; padding: 4px 0; }
+.bars .track { height: 8px; background: var(--line); border-radius: 4px; position: relative; }
+.bars .fill { height: 100%; background: var(--teal); border-radius: 4px; }
+.bars .b.weak .fill { background: var(--plum); }
+.bars .b.weak .name { color: var(--plum); font-weight: 500; }
+.delta { font-size: 12px; color: var(--muted); text-align: right; }
+.concern { padding: 8px 0; border-top: 1px solid var(--line); }
+.concern:first-of-type { border-top: 0; }
+.pending { text-align: center; color: var(--muted); padding: 18px 8px; font-size: 14px; }
+
+.toast {
+  position: absolute; left: 50%; bottom: 28px; transform: translateX(-50%);
+  background: var(--ink); color: var(--paper); padding: 8px 14px; border-radius: 6px; font-size: 14px;
+  opacity: 0; pointer-events: none; transition: opacity .2s;
+}
+.toast.show { opacity: 1; }
+.phone-wrap { position: relative; }
+
+@media (max-width: 860px) {
+  .page { grid-template-columns: 1fr; grid-template-areas: "head" "phone" "notes"; grid-template-rows: auto; padding-top: 24px; }
+  .switcher { flex-direction: row; gap: 4px; margin-bottom: 16px; }
+  .switcher button { flex: 1; grid-template-columns: 1fr; padding: 8px; text-align: center; }
+  .switcher button .n, .switcher button .d { display: none; }
+  .sim-note { margin-bottom: 16px; }
+  .phone { width: 100%; max-width: 420px; margin: 0 auto 28px; height: 680px; position: static; }
+}
+@media (prefers-reduced-motion: reduce) {
+  * { transition: none !important; animation: none !important; }
+}
+</style>
+</head>
+<body>
+<div class="page">
+  <section class="intro">
+    <h1>AI 销售复盘助手</h1>
+    <p class="lede">拜访后交一段录音，约 3 分钟拿到复盘；复盘结论自动回到下次拜访前的提醒卡，好话术经主管筛选后回到每个人的卡上。下面是三个企微 H5 页面的可点击原型。</p>
+    <span class="sim-note">模拟案例：公司、园所、人名和数据均为虚构</span>
+
+    <div class="switcher" role="group" aria-label="切换页面">
+      <button data-go="review" aria-pressed="true"><span class="n">1</span><span class="t">拜访后复盘</span><span class="d">销售：交素材 → 看复盘 → 两次确认</span></button>
+      <button data-go="card" aria-pressed="false"><span class="n">2</span><span class="t">拜访前提醒卡</span><span class="d">销售：前一天 18:00 企微推送</span></button>
+      <button data-go="weekly" aria-pressed="false"><span class="n">3</span><span class="t">主管周报</span><span class="d">主管：每周一 9:00 推送</span></button>
+    </div>
+  </section>
+
+  <section class="aside">
+    <div class="notes" id="notes" aria-live="polite"></div>
+    <p class="links">完整方案：<a href="https://github.com/xiaodan2048/sales-review-assistant/blob/main/docs/产品方案.md">产品方案</a> · <a href="https://github.com/xiaodan2048/sales-review-assistant/blob/main/docs/评测集与数据.md">评测集与数据</a> · <a href="https://github.com/xiaodan2048/sales-review-assistant/blob/main/prompts/scoring.md">评分 Prompt</a></p>
+  </section>
+
+  <div class="phone-col">
+    <div class="phone-wrap">
+      <div class="phone" role="region" aria-label="手机界面">
+        <div class="bar">
+          <button class="back" id="back" aria-label="返回上一步" hidden>‹</button>
+          <div class="title" id="title"></div>
+        </div>
+        <div class="screen" id="screen"></div>
+      </div>
+      <div class="toast" id="toast" role="status"></div>
+    </div>
+  </div>
+</div>
+
+<script>
+/* ===================== 模拟数据 ===================== */
+const VISIT = { school: "向阳花幼儿园", when: "12 月 9 日 14:00", who: "园长 王老师" };
+
+const DIMS = [
+  { id: "D1", name: "开场与信任", score: 4,
+    quotes: [{ t: "01:12", who: "销售", text: "您先跟我说说，现在老师们写观察记录是怎么写的？", mark: "现在老师们写观察记录是怎么写的" }],
+    why: "先问现状再讲产品，园长随后主动讲了期末加班的情况。" },
+  { id: "D2", name: "需求与决策链", score: 3,
+    quotes: [{ t: "06:40", who: "销售", text: "那这个是您这边定就可以了对吧？", mark: "您这边定就可以了对吧" }],
+    why: "问出了痛点，但决策链用封闭式提问带过，没问举办者是否参与，也没问预算。" },
+  { id: "D3", name: "价值对上痛点", score: 4,
+    quotes: [
+      { t: "04:05", who: "园长", text: "期末那两周老师天天加班补记录。", mark: "天天加班补记录" },
+      { t: "09:30", who: "销售", text: "拍照加一句语音就能出观察记录，期末直接导出。", mark: "期末直接导出" }],
+    why: "回应正对园长说的期末补记录，但没有举同类园所的例子。" },
+  { id: "D4", name: "顾虑与推进", score: 3,
+    quotes: [{ t: "11:20", who: "园长", text: "别又是一个要老师天天填的东西。", mark: "要老师天天填的东西" }],
+    why: "约定了两个班试用，但“老师负担”这个顾虑只回了一句“很简单的”，没有接住。" }
+];
+const SUMMARY = "园长认可能减轻期末补记录，约好大班两个班试用；举办者是否参与决策还没问。";
+const HIGHLIGHT = { t: "04:20", who: "销售", text: "期末那两周最累的是哪一步？是写，还是写完要整理成报告？", mark: "是写，还是写完要整理成报告", why: "把“累”拆成具体步骤，后面讲功能就能对得上。" };
+const FIX = { t: "06:40", who: "销售", text: "那这个是您这边定就可以了对吧？", mark: "您这边定就可以了对吧",
+  rewrite: "除了您，这件事还需要跟理事长那边商量吗？一般几月份报预算？" };
+
+const FIELDS = [
+  { k: "园所规模", v: "9 个班，约 30 名老师", q: { t: "01:40", who: "园长", text: "我们九个班，老师三十个左右。", mark: "九个班，老师三十个左右" } },
+  { k: "在用方案", v: "纸质观察记录本", q: { t: "02:30", who: "园长", text: "现在都是手写在本子上，期末再誊到电脑里。", mark: "手写在本子上" } },
+  { k: "最痛的场景", v: "期末两周集中补写观察记录", q: { t: "04:05", who: "园长", text: "期末那两周老师天天加班补记录。", mark: "期末那两周老师天天加班补记录" } },
+  { k: "主要顾虑", v: "老师负担：怕多一个要天天填的系统", q: { t: "11:20", who: "园长", text: "别又是一个要老师天天填的东西。", mark: "要老师天天填的东西" } },
+  { k: "拍板人与决策链", v: "园长初筛，理事长拍板", q: { t: "07:15", who: "园长", text: "我觉得行的话，最后还得理事长点头。", mark: "最后还得理事长点头" } },
+  { k: "下一步约定", v: "下周三前给大班两个班开通试用", q: { t: "24:50", who: "销售", text: "那下周三之前先给大班两个班开起来试试。", mark: "下周三之前先给大班两个班开起来" } },
+  { k: "老师的态度", v: null },
+  { k: "预算与审批时间", v: null }
+];
+
+const TODOS = [
+  { who: "我", what: "给大班两个班开通试用账号", due: "12 月 17 日前" },
+  { who: "我", what: "发同类园所（9 个班规模）的使用案例给王园长", due: "12 月 11 日前" },
+  { who: "王园长", what: "确定试用的两位班主任", due: "12 月 16 日前" }
+];
+
+const WEEK = {
+  range: "12 月 8 日 – 12 月 14 日",
+  total: 14, cumulative: 46,
+  people: [
+    { name: "林悦", role: "销售", n: 4, avg: 74 },
+    { name: "周航", role: "销售", n: 3, avg: 68 },
+    { name: "许诺", role: "销售", n: 2, avg: 81 },
+    { name: "陈一帆", role: "销售", n: 2, avg: 63 },
+    { name: "唐宁", role: "客户成功", n: 2, avg: 77 },
+    { name: "宋可", role: "客户成功", n: 1, avg: 70 }
+  ],
+  dims: [
+    { name: "D1 开场与信任", v: 3.9, last: 3.8 },
+    { name: "D2 需求与决策链", v: 3.1, last: 3.3 },
+    { name: "D3 价值对上痛点", v: 3.6, last: 3.5 },
+    { name: "D4 顾虑与推进", v: 3.4, last: 3.4 }
+  ],
+  concerns: [
+    { cat: "老师负担", n: 9, q: { who: "园长", text: "别又是一个要老师天天填的东西。", mark: "要老师天天填的东西" } },
+    { cat: "价格与预算", n: 6, q: { who: "园长", text: "今年的钱已经批完了，明年三月再看吧。", mark: "明年三月再看" } },
+    { cat: "家长隐私与幼儿影像安全", n: 4, q: { who: "园长", text: "孩子的照片传上去，家长那边会不会有意见？", mark: "家长那边会不会有意见" } }
+  ],
+  picks: [
+    { from: "许诺 · 晨光幼儿园 · D4 得 5 分 · 已约下次", dim: "老师负担",
+      q: { who: "销售", text: "您看这样，第一周只让一个班用拍照记录，其他都不动，老师觉得省事了再加。", mark: "第一周只让一个班用" } },
+    { from: "林悦 · 小橡树幼儿园 · D2 得 5 分 · 已开始试用", dim: "决策流程",
+      q: { who: "销售", text: "这种事一般园里是您定，还是要跟举办者那边一起看？", mark: "还是要跟举办者那边一起看" } },
+    { from: "唐宁 · 星河幼儿园 · D3 得 5 分 · 已签约加购", dim: "效果担忧",
+      q: { who: "销售", text: "上个月咱们园观察记录写了 412 条，比十月多了一倍，主要是中班在用。", mark: "比十月多了一倍" } }
+  ]
+};
+
+const NOTES = {
+  review: [
+    ["每个分数都带原话", "点开任意维度能看到依据和时间戳；找不到原话的维度标“依据不足”，不打分。"],
+    ["只给 1 条亮点、1 条最该改的", "内测时给 5 条建议，销售只看第一条；砍成 1 条后“这条下次做了没”能追踪。"],
+    ["AI 抽取只是候选", "8 项信息默认“待确认”，销售点“对”才写进客户档案，避免幻觉污染档案。"],
+    ["口述不打分", "口述是销售自己的转述，不代表现场表现；选“口述”试试，复盘会跳过评分。"]
+  ],
+  card: [
+    ["不让模型重新生成", "这张卡只把已确认的复盘结论和产品数据重新排版，没有新的幻觉风险。"],
+    ["必拿的 3 件事", "来自上次没问出来的关键信息和没完成的待办；评测里 20 段只有 9 段聊到预算，所以预算常年在这里。"],
+    ["园所使用数据", "只在试用跟进、老客户加购和上线回访时出现，是通用会话分析工具做不到的一块。"],
+    ["首次拜访", "没有上次复盘，只显示第 2、5 块；用页面顶部的开关切换看看。"]
+  ],
+  weekly: [
+    ["主管只有两个动作", "点开某份复盘（只读），或把好话术选进团队话术库。"],
+    ["样本不够就不下结论", "累计不满 20 条时 TOP3 和话术候选不出；用顶部开关看这个状态。"],
+    ["不做排行榜", "分数用来找问题，不进绩效考核；人员表按人名列，不按分数排序。"],
+    ["话术候选的条件", "该维度得分高，且这家园所后来有推进（约到下次、开始试用或签约）。"]
+  ]
+};
+
+/* ===================== 状态 ===================== */
+const S = {
+  tab: "review",
+  step: "upload",            // upload → processing → result → fields → todos → done
+  source: null, type: null,
+  openDim: null,
+  fields: FIELDS.map(f => ({ ...f, state: f.v ? "pending" : "none", editing: false })),
+  todos: TODOS.map(() => true),
+  savedHighlight: false,
+  firstVisit: false,
+  under20: false,
+  picked: new Set()
+};
+
+const $ = s => document.querySelector(s);
+const screen = $("#screen"), title = $("#title"), back = $("#back");
+const esc = s => String(s).replace(/[&<>"]/g, c => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;" }[c]));
+
+function quote(q, withTs = true) {
+  const text = esc(q.text);
+  const marked = q.mark ? text.replace(esc(q.mark), `<mark>${esc(q.mark)}</mark>`) : text;
+  return `<p class="quote">${withTs && q.t ? `<span class="ts">${q.t}</span>` : ""}${q.who ? `<span class="who">${q.who}</span>` : ""}${marked}</p>`;
+}
+const pips = n => `<span class="pips" aria-hidden="true">${[1,2,3,4,5].map(i => `<i class="${i <= n ? "f" : ""}"></i>`).join("")}</span>`;
+let toastTimer;
+function toast(msg) {
+  const t = $("#toast"); t.textContent = msg; t.classList.add("show");
+  clearTimeout(toastTimer); toastTimer = setTimeout(() => t.classList.remove("show"), 1800);
+}
+
+/* ===================== 页面 1：拜访后复盘 ===================== */
+const STEPS = ["upload", "processing", "result", "fields", "todos", "done"];
+const STEP_TITLE = { upload: "复盘这次拜访", processing: "正在分析", result: "复盘结果", fields: "确认客户信息", todos: "确认下一步", done: "已完成" };
+
+function renderReview() {
+  const st = S.step;
+  title.textContent = STEP_TITLE[st];
+  back.hidden = st === "upload" || st === "processing" || st === "done";
+  if (st === "upload") {
+    const src = [
+      ["record", "上传录音", "从手机文件里选这次拜访的录音"],
+      ["call", "导入通话录音", "电话或企微通话"],
+      ["voice", "按住口述 1–3 分钟", "没录音时用；只整理客户信息和下一步，不评分"]
+    ];
+    screen.innerHTML = `
+      <div class="card">
+        <div class="meta">来自企微日程</div>
+        <h3 style="margin:2px 0 0">${VISIT.school}</h3>
+        <div class="meta">${VISIT.when} · ${VISIT.who}</div>
+      </div>
+      <div class="card">
+        <h3>交素材</h3>
+        <div class="choices">${src.map(([id, t, d]) => `
+          <button class="choice" data-src="${id}" aria-pressed="${S.source === id}"><span class="t">${t}</span><span class="d">${d}</span></button>`).join("")}
+        </div>
+      </div>
+      <div class="card">
+        <h3>拜访类型</h3>
+        <div class="seg">${["新签", "试用跟进", "老客户加购或回访"].map(t => `
+          <button class="small-btn ${S.type === t ? "on" : ""}" data-type="${t}" aria-pressed="${S.type === t}">${t}</button>`).join("")}
+        </div>
+      </div>
+      <button class="btn" id="start" ${S.source && S.type ? "" : "disabled"}>开始分析</button>`;
+    screen.querySelectorAll("[data-src]").forEach(b => b.onclick = () => { S.source = b.dataset.src; renderReview(); });
+    screen.querySelectorAll("[data-type]").forEach(b => b.onclick = () => { S.type = b.dataset.type; renderReview(); });
+    $("#start").onclick = () => { S.step = "processing"; renderReview(); runProgress(); };
+  }
+  if (st === "processing") {
+    screen.innerHTML = `
+      <div class="card">
+        <h3>约 3 分钟，可以先关掉</h3>
+        <p class="meta" style="margin:0 0 8px">好了会在企微里通知你。原型里会快进。</p>
+        <ol class="progress" id="prog">
+          <li data-i="0"><span class="dot"></span>转写</li>
+          <li data-i="1"><span class="dot"></span>分说话人</li>
+          <li data-i="2"><span class="dot"></span>${S.source === "voice" ? "整理客户信息" : "分析与评分"}</li>
+        </ol>
+      </div>`;
+  }
+  if (st === "result") {
+    if (S.source === "voice") {
+      screen.innerHTML = `
+        <div class="card"><p class="verdict">${SUMMARY}</p>
+        <p class="na" style="margin:0">这次交的是口述，口述是你的转述，不代表现场表现，所以不打四维度分。下面直接确认客户信息和下一步。</p></div>
+        <button class="btn" id="next">确认客户信息</button>`;
+      $("#next").onclick = () => go("fields");
+      return;
+    }
+    const total = DIMS.reduce((s, d) => s + d.score, 0) * 5;
+    screen.innerHTML = `
+      <div class="card">
+        <div class="row"><span class="meta">${VISIT.school} · ${S.type}</span><span class="total"><b>${total}</b><span class="meta">/100</span></span></div>
+        <p class="verdict">${SUMMARY}</p>
+        ${DIMS.map(d => `
+          <div class="dim" data-open="${S.openDim === d.id}">
+            <button aria-expanded="${S.openDim === d.id}" data-dim="${d.id}">
+              <span>${d.id} ${d.name}</span>${pips(d.score)}<span class="chev" aria-hidden="true">›</span>
+            </button>
+            <div class="body"><div class="meta">${d.score} 分 · ${d.why}</div>${d.quotes.map(q => quote(q)).join("")}</div>
+          </div>`).join("")}
+      </div>
+      <div class="card good">
+        <div class="label">做得好的 1 条</div>
+        ${quote(HIGHLIGHT)}
+        <p class="meta" style="margin:6px 0 10px">${HIGHLIGHT.why}</p>
+        <button class="small-btn ${S.savedHighlight ? "on" : ""}" id="save">${S.savedHighlight ? "已存入我的话术" : "存入我的话术"}</button>
+      </div>
+      <div class="card fix">
+        <div class="label">最该改的 1 条</div>
+        ${quote(FIX)}
+        <div class="rewrite"><div class="label">可以这样问</div>${FIX.rewrite}</div>
+      </div>
+      <button class="btn" id="next">确认客户信息</button>`;
+    screen.querySelectorAll("[data-dim]").forEach(b => b.onclick = () => {
+      S.openDim = S.openDim === b.dataset.dim ? null : b.dataset.dim; renderReview();
+      screen.querySelector(`[data-dim="${b.dataset.dim}"]`).focus();
+    });
+    $("#save").onclick = () => { S.savedHighlight = true; renderReview(); toast("已存入我的话术"); };
+    $("#next").onclick = () => go("fields");
+  }
+  if (st === "fields") {
+    const pending = S.fields.filter(f => f.state === "pending").length;
+    screen.innerHTML = `
+      <div class="card">
+        <p class="meta" style="margin:0 0 10px">从对话里找到 6 项，每项带原话。点“对”才会写进客户档案。</p>
+        ${S.fields.map((f, i) => `
+          <div class="field">
+            <div class="row"><span class="k">${f.k}</span>${f.state === "none" ? `<span class="state">对话里没提到</span>` : `<span class="state ${f.state === "ok" ? "ok" : ""}">${f.state === "ok" ? "已确认" : "待确认"}</span>`}</div>
+            ${f.state === "none" ? "" : f.editing
+              ? `<input aria-label="修改${f.k}" data-input="${i}" value="${esc(f.v)}"><div style="margin-top:6px"><button class="small-btn on" data-saveedit="${i}">保存并确认</button></div>`
+              : `<div class="row"><span class="v">${esc(f.v)}</span>${f.state === "pending" ? `<span class="acts"><button class="small-btn" data-ok="${i}">对</button><button class="small-btn" data-edit="${i}">改</button></span>` : ""}</div>${quote(f.q)}`}
+          </div>`).join("")}
+      </div>
+      <button class="small-btn" id="allok" ${pending ? "" : "disabled"}>剩下 ${pending} 项全部确认</button>
+      <button class="btn" id="next" ${pending ? "disabled" : ""}>${pending ? `还有 ${pending} 项待确认` : "确认下一步"}</button>`;
+    screen.querySelectorAll("[data-ok]").forEach(b => b.onclick = () => { S.fields[b.dataset.ok].state = "ok"; renderReview(); });
+    screen.querySelectorAll("[data-edit]").forEach(b => b.onclick = () => { S.fields[b.dataset.edit].editing = true; renderReview(); screen.querySelector(`[data-input="${b.dataset.edit}"]`).focus(); });
+    screen.querySelectorAll("[data-saveedit]").forEach(b => b.onclick = () => {
+      const i = b.dataset.saveedit, val = screen.querySelector(`[data-input="${i}"]`).value.trim();
+      if (val) S.fields[i].v = val;
+      S.fields[i].editing = false; S.fields[i].state = "ok"; renderReview();
+    });
+    $("#allok").onclick = () => { S.fields.forEach(f => { if (f.state === "pending") f.state = "ok"; }); renderReview(); };
+    $("#next").onclick = () => go("todos");
+  }
+  if (st === "todos") {
+    const n = S.todos.filter(Boolean).length;
+    screen.innerHTML = `
+      <div class="card">
+        <h3>对话里的承诺和建议动作</h3>
+        ${TODOS.map((t, i) => `
+          <label class="todo"><input type="checkbox" data-todo="${i}" ${S.todos[i] ? "checked" : ""}>
+            <span><b style="font-weight:500">${t.what}</b><br><span class="meta">${t.who} · ${t.due}</span></span></label>`).join("")}
+      </div>
+      <div class="card"><div class="meta">同时会生成下次拜访的提醒卡：上次结论、这次必拿的 3 件事、没接住的顾虑。</div></div>
+      <button class="btn" id="next" ${n ? "" : "disabled"}>转成 ${n} 条企微待办</button>`;
+    screen.querySelectorAll("[data-todo]").forEach(c => c.onchange = () => { S.todos[c.dataset.todo] = c.checked; renderReview(); });
+    $("#next").onclick = () => go("done");
+  }
+  if (st === "done") {
+    const ok = S.fields.filter(f => f.state === "ok").length;
+    screen.innerHTML = `
+      <div class="done-mark" aria-hidden="true">✓</div>
+      <p style="text-align:center;margin:0 0 4px;font-weight:500">已写回客户档案</p>
+      <p class="meta" style="text-align:center;margin:0 0 16px">${ok} 项客户信息 · ${S.todos.filter(Boolean).length} 条企微待办 · 1 张提醒卡</p>
+      <button class="btn" id="tocard">看下次拜访的提醒卡</button>
+      <button class="btn ghost" id="again">重新走一遍</button>`;
+    $("#tocard").onclick = () => setTab("card");
+    $("#again").onclick = resetReview;
+  }
+}
+function go(step) { S.step = step; renderReview(); screen.scrollTop = 0; }
+function resetReview() {
+  Object.assign(S, { step: "upload", source: null, type: null, openDim: null, savedHighlight: false,
+    fields: FIELDS.map(f => ({ ...f, state: f.v ? "pending" : "none", editing: false })), todos: TODOS.map(() => true) });
+  renderReview();
+}
+function runProgress() {
+  const reduce = matchMedia("(prefers-reduced-motion: reduce)").matches;
+  const items = [...document.querySelectorAll("#prog li")];
+  let i = 0;
+  const tick = () => {
+    items.forEach((li, j) => li.className = j < i ? "done" : j === i ? "doing" : "");
+    if (i > items.length - 1) { setTimeout(() => go("result"), reduce ? 0 : 400); return; }
+    i++; setTimeout(tick, reduce ? 50 : 700);
+  };
+  tick();
+}
+back.onclick = () => {
+  const i = STEPS.indexOf(S.step);
+  if (S.tab === "review" && i > 0) go(i === 2 ? "upload" : STEPS[i - 1]);
+};
+
+/* ===================== 页面 2：拜访前提醒卡 ===================== */
+function renderCard() {
+  title.textContent = "明天的拜访";
+  back.hidden = true;
+  const first = S.firstVisit;
+  const school = first ? "春芽幼儿园" : VISIT.school;
+  screen.innerHTML = `
+    <div class="card">
+      <div class="row"><div><h3 style="margin:0">${school}</h3><div class="meta">${first ? "12 月 16 日 10:00 · 新签 · 首次拜访" : "12 月 17 日 15:00 · 试用跟进"}</div></div></div>
+      <div class="seg" style="margin-top:10px" role="group" aria-label="原型演示开关">
+        <button class="small-btn ${!first ? "on" : ""}" data-first="0" aria-pressed="${!first}">有上次复盘</button>
+        <button class="small-btn ${first ? "on" : ""}" data-first="1" aria-pressed="${first}">首次拜访</button>
+      </div>
+    </div>
+    ${first ? "" : `
+    <div class="card">
+      <h3><span class="block-n">1</span>上次结论</h3>
+      <p style="margin:0">${SUMMARY}</p>
+      <div class="fix" style="padding-left:10px;margin-top:10px"><div class="label">上次最该改的</div>${quote(FIX, false)}<div class="meta">这次试试：${FIX.rewrite}</div></div>
+    </div>`}
+    <div class="card">
+      <h3><span class="block-n">2</span>这次必拿的 3 件事</h3>
+      <ol class="must">${(first
+        ? ["谁拍板：园长、业务园长还是举办者？", "预算一般几月份审批？", "现在观察记录用什么在写？"]
+        : ["确认理事长是否参与决策、什么时候看", "问到预算审批的月份", "大班两个班的试用开起来了没有，卡在哪一步"]).map(x => `<li>${x}</li>`).join("")}</ol>
+    </div>
+    ${first ? "" : `
+    <div class="card">
+      <h3><span class="block-n">3</span>上次没接住的顾虑</h3>
+      ${quote(DIMS[3].quotes[0])}
+      <div class="meta" style="margin-top:6px">建议接法：先说清“不用每天填”，只在想记的时候拍一张。</div>
+    </div>
+    <div class="card">
+      <h3><span class="block-n">4</span>这家园所近 30 天的使用</h3>
+      <div class="stats">
+        <div><b>6/8</b><span>活跃老师</span></div>
+        <div><b>142</b><span>观察记录</span></div>
+        <div><b>1</b><span>教研活动</span></div>
+      </div>
+      <div class="meta" style="margin-top:8px">大班两个班已开通 8 个账号，2 位老师还没登录过。</div>
+    </div>`}
+    <div class="card">
+      <h3><span class="block-n">5</span>团队话术</h3>
+      <div class="meta">${first ? "新签常见顾虑：决策流程" : "对应顾虑：老师负担"}</div>
+      ${first ? quote(WEEK.picks[1].q, false) : quote(WEEK.picks[0].q, false)}
+      <div class="meta" style="margin-top:4px">${first ? "林悦" : "许诺"} 的话术 · 主管选入</div>
+    </div>`;
+  screen.querySelectorAll("[data-first]").forEach(b => b.onclick = () => { S.firstVisit = b.dataset.first === "1"; renderCard(); });
+}
+
+/* ===================== 页面 3：主管周报 ===================== */
+function renderWeekly() {
+  title.textContent = "团队周报";
+  back.hidden = true;
+  const u = S.under20;
+  const max = 5;
+  const weakest = WEEK.dims.reduce((a, b) => (b.v < a.v ? b : a));
+  screen.innerHTML = `
+    <div class="card">
+      <div class="meta">${WEEK.range}</div>
+      <div class="seg" style="margin-top:8px" role="group" aria-label="原型演示开关">
+        <button class="small-btn ${!u ? "on" : ""}" data-u="0" aria-pressed="${!u}">累计 ${WEEK.cumulative} 条</button>
+        <button class="small-btn ${u ? "on" : ""}" data-u="1" aria-pressed="${u}">累计不满 20 条</button>
+      </div>
+    </div>
+    <div class="card">
+      <h3>交了多少</h3>
+      <p style="margin:0 0 6px">上周共 <b>${u ? 6 : WEEK.total}</b> 份复盘</p>
+      <table><thead><tr><th>人</th><th>角色</th><th class="num">份数</th><th class="num">平均分</th></tr></thead>
+      <tbody>${(u ? WEEK.people.slice(0, 3).map(p => ({ ...p, n: 2 })) : WEEK.people).map(p => `<tr><td>${p.name}</td><td class="meta">${p.role}</td><td class="num">${p.n}</td><td class="num">${p.avg}</td></tr>`).join("")}</tbody></table>
+      <p class="meta" style="margin:8px 0 0">点开任何一份，看到的是和销售端同一份复盘（只读）。</p>
+    </div>
+    <div class="card">
+      <h3>四维度团队均分</h3>
+      <div class="bars">${WEEK.dims.map(d => {
+        const diff = +(d.v - d.last).toFixed(1);
+        return `<div class="b ${d === weakest ? "weak" : ""}">
+          <span class="name">${d.name.replace(/^D\d /, "")}</span>
+          <span class="track" role="img" aria-label="${d.v} 分，满分 5 分"><span class="fill" style="display:block;width:${d.v / max * 100}%"></span></span>
+          <span class="delta"><b style="color:var(--ink);font-weight:500">${d.v}</b> ${diff === 0 ? "持平" : (diff > 0 ? "+" : "") + diff}</span></div>`;
+      }).join("")}</div>
+      <p class="meta" style="margin:8px 0 0">最弱：${weakest.name}，比上周低 ${(weakest.last - weakest.v).toFixed(1)}。</p>
+    </div>
+    <div class="card">
+      <h3>团队最常碰到的顾虑</h3>
+      ${u ? `<div class="pending">样本积累中：累计满 20 条复盘后再统计，现在下结论容易看错。</div>` :
+        WEEK.concerns.map((c, i) => `<div class="concern"><div class="row"><b style="font-weight:500">${i + 1}. ${c.cat}</b><span class="meta">${c.n} 次</span></div>${quote(c.q, false)}</div>`).join("")}
+    </div>
+    <div class="card">
+      <h3>本周好话术候选</h3>
+      ${u ? `<div class="pending">样本积累中：累计满 20 条复盘后开放。</div>` :
+        WEEK.picks.map((p, i) => `<div class="concern">
+          <div class="meta">${p.from}</div>
+          ${quote(p.q, false)}
+          <div class="row" style="margin-top:6px"><span class="meta">顾虑类别：${p.dim}</span>
+          <button class="small-btn ${S.picked.has(i) ? "on" : ""}" data-pick="${i}" ${S.picked.has(i) ? "disabled" : ""}>${S.picked.has(i) ? "已选入" : "选入话术库"}</button></div>
+        </div>`).join("")}
+    </div>`;
+  screen.querySelectorAll("[data-u]").forEach(b => b.onclick = () => { S.under20 = b.dataset.u === "1"; renderWeekly(); });
+  screen.querySelectorAll("[data-pick]").forEach(b => b.onclick = () => {
+    S.picked.add(+b.dataset.pick); renderWeekly(); toast("已选入团队话术库，会出现在所有人提醒卡的第 5 块");
+  });
+}
+
+/* ===================== 切换 ===================== */
+function renderNotes() {
+  $("#notes").innerHTML = `<h2>这一页为什么这样设计</h2><ul>${NOTES[S.tab].map(([b, t]) => `<li><b>${b}</b>：${t}</li>`).join("")}</ul>`;
+}
+function setTab(tab) {
+  S.tab = tab;
+  document.querySelectorAll("[data-go]").forEach(b => b.setAttribute("aria-pressed", b.dataset.go === tab));
+  ({ review: renderReview, card: renderCard, weekly: renderWeekly })[tab]();
+  screen.scrollTop = 0;
+  renderNotes();
+}
+document.querySelectorAll("[data-go]").forEach(b => b.onclick = () => setTab(b.dataset.go));
+setTab("review");
+</script>
+</body>
+</html>
